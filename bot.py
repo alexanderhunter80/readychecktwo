@@ -11,7 +11,7 @@ log.debug("Logger initialized")
 import os, discord, urllib.request, asyncio, pymongo, bson
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
-
+from ops import *
 
 
 # Token.
@@ -21,14 +21,16 @@ DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
 
 # Database.
-# Create admin user with db.createUser({user:'username',pwd:'password',roles:[{role:'userAdminAnyDatabase',db:'admin'}]})
+# Create admin user with db.createUser({user:'username',pwd:'password',roles:[{role:'userAdmin',db:'admin'}]})
 # Then edit /etc/mongod.conf "security:authorization:true"
-MONGO_U="MONGODB_USERNAME"
-MONGO_P="MONGODB_PW"
-MONGO_AS="MONGODB_AUTHSOURCE"
+MONGO_U=os.getenv("MONGODB_USERNAME")
+MONGO_P=os.getenv("MONGODB_PW")
+MONGO_AS=os.getenv("MONGODB_AUTHSOURCE")
 mongoClient = pymongo.MongoClient(username=MONGO_U, password=MONGO_P, authSource=MONGO_AS, uuidRepresentation='standard')
 log.debug(mongoClient)
 db = mongoClient.readycheck
+log.debug(db.list_collection_names())
+checks = db.checks
 
 
 
@@ -55,7 +57,12 @@ async def on_raw_reaction_add(payload):
 @bot.tree.command(name="ready", description="Call a ready check")
 async def ready(interaction: discord.interactions.Interaction, target: int, mention: discord.Role = None, unique: bool = None):
     await interaction.response.defer()
-    log.debug(f'Received readycheck: %s, %s, %s', target, mention, unique)
+    log.info(f'Ready check called by {interaction.user}, target {target}, mention {mention}, unique {unique}')
+
+    checkForConflicts = findUniqueReadyCheck(checks, interaction.message)
+    log.debug(checkForConflicts)
+
+
     await interaction.followup.send('readycheck received')
     return
 
