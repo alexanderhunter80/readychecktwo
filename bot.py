@@ -41,15 +41,12 @@ async def on_message(message):
 
 
 # Commands.
-@bot.tree.command(name="radar", description="Retrieves the live doppler radar for a station, if none given, gets CONUS.")
-async def _space(ctx: discord.interactions.Interaction):
-	await ctx.response.send_message(file=discord.File('rdr.gif'))
-
-
 @bot.tree.command(name="ready", description="Call a ready check")
-async def readycheck(interaction: discord.interactions.Interaction, target: int, mention: str, unique: bool):
+async def readycheck(interaction: discord.interactions.Interaction, target: int, mention: discord.Role = None, unique: bool = None):
+    await interaction.response.defer()
     log.debug(f'Received readycheck: %s, %s, %s', target, mention, unique)
-    await interaction.channel.send('readycheck received!')
+    await interaction.followup.send('readycheck received!')
+
 
 
 # Bootstrap.
