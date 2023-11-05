@@ -10,7 +10,7 @@ import inspect
 
 
 # Imports.
-import os, discord, urllib.request, asyncio, pymongo, bson
+import os, discord, urllib.request, asyncio, bson
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
 from ops import *
@@ -22,18 +22,8 @@ DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
 
 
-# Database.
-# Create admin user with db.createUser({user:'username',pwd:'password',roles:[{role:'userAdmin',db:'admin'}]})
-# Then edit /etc/mongod.conf "security:authorization:true"
-MONGO_U=os.getenv("MONGODB_USERNAME")
-MONGO_P=os.getenv("MONGODB_PW")
-MONGO_AS=os.getenv("MONGODB_AUTHSOURCE")
-mongoClient = pymongo.MongoClient(username=MONGO_U, password=MONGO_P, authSource=MONGO_AS, uuidRepresentation='standard')
-botLog.debug(mongoClient)
-db = mongoClient.readycheck
-botLog.debug(db.list_collection_names())
-checks = db.checks
-
+# Dictionary.
+checks = {}
 
 
 # Intents.
@@ -58,36 +48,42 @@ async def on_raw_reaction_add(payload):
 # Commands.
 @bot.tree.command(name="ready", description="Call a ready check")
 async def ready(interaction: discord.interactions.Interaction, target: int, mention: discord.Role = None, unique: bool = None):
+    botLog.debug("enter")
     await interaction.response.defer()
     botLog.info(f'Ready check called by {interaction.user}, target {target}, mention {mention}, unique {unique}')
 
-    botLog.debug(pprint(inspect.getmembers(interaction)))
-
-
-    #checkForConflicts = findUniqueReadyCheck(checks, interaction.message)
+    #checkForConflicts = findUniqueReadyCheck(checks, interaction, opts)
     #botLog.debug(checkForConflicts)
 
+    await createReadyCheck(checks, interaction)
 
-    await interaction.followup.send('readycheck received')
+    botLog.debug("exit")
     return
 
 @bot.tree.command(name="cancel", description="Cancel an open ready check")
 async def cancel(interaction: discord.interactions.Interaction):
+    botLog.debug("enter")
     await interaction.response.send_message('cancel received')
+    botLog.debug("exit")
     return
 
 @bot.tree.command(name="clearall", description="Admin only: clear all ready checks")
 async def clearall(interaction: discord.interactions.Interaction):
+    botLog.debug("enter")
     await interaction.response.send_message('clearall received')
+    botLog.debug("exit")
     return
 
 
 # Bootstrap.
 @bot.event
 async def on_ready():
+    botLog.debug("enter")
     await bot.change_presence(status=discord.Status.online)
     await bot.tree.sync()
-    print(f'We have logged in as {bot.user}')
+    botLog.info(f'We have logged in as {bot.user}')
+    botLog.debug("exit")
+    return
 
 bot.run(DISCORD_TOKEN)
 print('Finished')

@@ -13,16 +13,15 @@ class ReadyCheck(MutableMapping):
         self.mapping = {}
         self.mapping["id"] = uuid.uuid4()
         self.mapping["input"] = None
+        self.mapping["target"] = None        
         self.mapping["mention"] = None
-        self.mapping["message"] = None
-        self.mapping["target"] = None
+        self.mapping["uniqueReactors"] = None
         self.mapping["author"] = None
         self.mapping["guild"] = None
         self.mapping["channel"] = None
         self.mapping["authorLastKnownName"] = None
         self.mapping["guildLastKnownName"] = None
         self.mapping["channelLastKnownName"] = None
-        self.mapping["uniqueReactors"] = True
         self.mapping["createdAt"] = datetime.utcnow()
         self.mapping["updatedAt"] = datetime.utcnow()
         self.update(data)
@@ -45,20 +44,47 @@ class ReadyCheck(MutableMapping):
     def __repr__(self):
         return f'{type(self).__name__}({self.mapping})'
 
-    def build(self, message, target, mention, uniqueReactors):
-        self.mapping["input"] = message.content
-        self.mapping["target"] = target
-        self.mapping["mention"] = mention
-        self.mapping["author"] = message.author.id
-        self.mapping["guild"] = message.guild.id
-        self.mapping["channel"] = message.channel.id
-        self.mapping["authorLastKnownName"] = message.author.name
-        self.mapping["guildLastKnownName"] = message.guild.name
-        self.mapping["channelLastKnownName"] = message.channel.name
-        self.mapping["uniqueReactors"] = uniqueReactors
+
+
+    def build(self, interaction):
+        readyLog.debug("enter")
+        readyLog.debug(interaction.data)
+        self.mapping["input"] = interaction.data
+        self.mapping["target"] = findInOptions(interaction, "target")
+        self.mapping["mention"] = findInOptions(interaction, "mention")
+        self.mapping["uniqueReactors"] = findInOptions(interaction, "uniqueReactors")
+        self.mapping["author"] = interaction.user.id
+        self.mapping["guild"] = interaction.guild_id
+        self.mapping["channel"] = interaction.channel_id
+        self.mapping["authorLastKnownName"] = interaction.user.name
+        self.mapping["guildLastKnownName"] = interaction.guild.name
+        self.mapping["channelLastKnownName"] = interaction.channel.name
         self.mapping["updatedAt"] = datetime.utcnow()
         readyLog.debug("Built "+glimpse(self))
+        readyLog.debug("exit")
         return self
 
+    def generateKey(self):
+        readyLog.debug("enter")
+        generatedKey = self["author"] + self["guild"] + self["channel"]
+        readyLog.debug(f"exit {generatedKey}")
+        return generatedKey
+
+    def generateKeyFromInteraction(interaction):
+        readyLog.debug("enter")
+        generatedKey = interaction.user.id + interaction.guild_id + interaction.channel_id
+        readyLog.debug(f"exit {generatedKey}")
+        return generatedKey
+
 def glimpse(rc):
-    return f'ReadyCheck: {rc["authorLastKnownName"]} in {rc["guildLastKnownName"]} / {rc["channelLastKnownName"]}'
+    return f'ReadyCheck: {rc["authorLastKnownName"]} in {rc["guildLastKnownName"]} / {rc["channelLastKnownName"]} : target {rc["target"]}, {rc["mention"]}, {rc["uniqueReactors"]}'
+
+def findInOptions(interaction, name):
+    readyLog.debug(f"enter {name}")
+    result = None
+    for o in interaction.data['options']:
+        if o['name'] == name:
+            result = o['value']
+            break
+    readyLog.debug(f"exit {name} {result}")
+    return result    
