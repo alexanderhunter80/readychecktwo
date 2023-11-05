@@ -1,7 +1,7 @@
 import logging
 import logging.config
 logging.config.fileConfig("logging.conf")
-log = logging.getLogger("readycheck")
+readyLog = logging.getLogger("readycheck")
 
 from discord import Message
 from collections.abc import MutableMapping
@@ -57,7 +57,7 @@ class ReadyCheck(MutableMapping):
         self.mapping["channelLastKnownName"] = message.channel.name
         self.mapping["uniqueReactors"] = uniqueReactors
         self.mapping["updatedAt"] = datetime.utcnow()
-        log.debug("Built "+glimpse(self))
+        readyLog.debug("Built "+glimpse(self))
         return self
 
 def glimpse(rc):

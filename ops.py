@@ -2,7 +2,7 @@
 import logging
 import logging.config
 logging.config.fileConfig("logging.conf")
-log = logging.getLogger("ops")
+opsLog = logging.getLogger("ops")
 
 
 
@@ -15,13 +15,13 @@ from classes.readycheck import ReadyCheck, glimpse
 
 # Database methods.
 def findUniqueReadyCheck(collection, message):
-	log.debug('enter findUniqueReadyCheck')
-	log.debug(collection)
+	opsLog.debug('enter findUniqueReadyCheck')
+	opsLog.debug(collection)
 	# ReadyCheck items should always be limited to one per user per channel
 	test = collection.insert_one({name:"test",payload:"whatever"})
-	log.debug(test)
+	opsLog.debug(test)
 	result = collection.find_one({"author":message.author.id,"guild":message.guild.id,"channel":message.channel.id})
-	log.debug('exit %s', result)
+	opsLog.debug('exit %s', result)
 	return result
 
 def findReadyCheckByMessageId(collection, id):
@@ -44,7 +44,7 @@ async def createReadyCheck(ctx, target, mention, uniqueReactors, collection):
 	rc["message"] = sentMessage.id
 
 	collection.insert_one(rc)
-	log.debug(f'Inserted {rc["id"]} into checks')  
+	opsLog.debug(f'Inserted {rc["id"]} into checks')  
 
 	return
 
