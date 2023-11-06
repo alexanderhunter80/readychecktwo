@@ -26,6 +26,7 @@ DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 checks = {}
 
 
+
 # Intents.
 intents = discord.Intents.default()
 intents.message_content = True
@@ -52,11 +53,22 @@ async def ready(interaction: discord.interactions.Interaction, target: int, ment
     await interaction.response.defer()
     botLog.info(f'Ready check called by {interaction.user}, target {target}, mention {mention}, unique {unique}')
 
-    #checkForConflicts = findUniqueReadyCheck(checks, interaction, opts)
+    #checkForConflicts = findUniqueReadyCheck(checks, interaction)
     #botLog.debug(checkForConflicts)
 
     await createReadyCheck(checks, interaction)
 
+    botLog.debug("exit")
+    return
+
+@bot.tree.command(name="find", description="Query whether you have an open ready check")
+async def find(interaction: discord.interactions.Interaction):
+    botLog.debug("enter")
+    await interaction.response.defer()
+
+    result = findUniqueReadyCheck(checks, interaction)
+
+    await interaction.followup.send(f'check found? {result}')
     botLog.debug("exit")
     return
 
@@ -65,7 +77,7 @@ async def cancel(interaction: discord.interactions.Interaction):
     botLog.debug("enter")
     await interaction.response.send_message('cancel received')
     botLog.debug("exit")
-    return
+    return    
 
 @bot.tree.command(name="clearall", description="Admin only: clear all ready checks")
 async def clearall(interaction: discord.interactions.Interaction):

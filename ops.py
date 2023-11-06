@@ -13,16 +13,21 @@ from classes.readycheck import ReadyCheck, glimpse, findInOptions
 
 
 
-# # ReadyCheck methods.
-# def findUniqueReadyCheck(storage, message):
-# 	opsLog.debug('enter findUniqueReadyCheck')
-# 	opsLog.debug(collection)
-# 	# ReadyCheck items should always be limited to one per user per channel
-# 	test = collection.insert_one({name:"test",payload:"whatever"})
-# 	opsLog.debug(test)
-# 	result = collection.find_one({"author":message.author.id,"guild":message.guild.id,"channel":message.channel.id})
-# 	opsLog.debug('exit %s', result)
-# 	return result
+# ReadyCheck methods.
+def findUniqueReadyCheck(storage, interaction):
+	opsLog.debug('enter')
+
+	result = False
+	opsLog.debug(result)
+
+	possibleKey = ReadyCheck.generateKeyFromInteraction(interaction)
+	opsLog.debug(f'possible key {possibleKey}')
+
+	if possibleKey in storage:
+		result = True
+
+	opsLog.debug(f'exit {result}')
+	return result
 
 #def findReadyCheckByMessageId(storage, id):
 #	return collection.find_one({"message":id})
@@ -41,10 +46,12 @@ async def createReadyCheck(storage, interaction):
 		messageText = str(mentionInMessage)+" "+messageText
 	opsLog.debug(messageText)
 
-	storage[rc.generateKey()] = rc
-	opsLog.debug(f'Inserted {rc["id"]} into checks')	
+	sentMessage = await interaction.followup.send(messageText, wait=True)
+	rc["sentMessage"] = sentMessage
+	opsLog.debug(f"message id {rc['sentMessage'].id}")
 
-	await interaction.followup.send(messageText)
+	storage[rc.generateKey()] = rc
+	opsLog.info(f'Inserted {rc.generateKey()} into checks')	
 
 	opsLog.debug("exit")
 	return

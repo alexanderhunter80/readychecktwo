@@ -22,6 +22,7 @@ class ReadyCheck(MutableMapping):
         self.mapping["authorLastKnownName"] = None
         self.mapping["guildLastKnownName"] = None
         self.mapping["channelLastKnownName"] = None
+        self.mapping["sentMessage"] = None
         self.mapping["createdAt"] = datetime.utcnow()
         self.mapping["updatedAt"] = datetime.utcnow()
         self.update(data)
@@ -44,8 +45,6 @@ class ReadyCheck(MutableMapping):
     def __repr__(self):
         return f'{type(self).__name__}({self.mapping})'
 
-
-
     def build(self, interaction):
         readyLog.debug("enter")
         readyLog.debug(interaction.data)
@@ -60,19 +59,19 @@ class ReadyCheck(MutableMapping):
         self.mapping["guildLastKnownName"] = interaction.guild.name
         self.mapping["channelLastKnownName"] = interaction.channel.name
         self.mapping["updatedAt"] = datetime.utcnow()
-        readyLog.debug("Built "+glimpse(self))
+        readyLog.info("Built "+glimpse(self))
         readyLog.debug("exit")
         return self
 
     def generateKey(self):
         readyLog.debug("enter")
-        generatedKey = self["author"] + self["guild"] + self["channel"]
+        generatedKey = int(f'{self["author"]}{self["guild"]}{self["channel"]}')
         readyLog.debug(f"exit {generatedKey}")
         return generatedKey
 
     def generateKeyFromInteraction(interaction):
         readyLog.debug("enter")
-        generatedKey = interaction.user.id + interaction.guild_id + interaction.channel_id
+        generatedKey = int(f'{interaction.user.id}{interaction.guild_id}{interaction.channel_id}')
         readyLog.debug(f"exit {generatedKey}")
         return generatedKey
 
