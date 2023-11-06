@@ -53,8 +53,15 @@ async def ready(interaction: discord.interactions.Interaction, target: int, ment
     await interaction.response.defer()
     botLog.info(f'Ready check called by {interaction.user}, target {target}, mention {mention}, unique {unique}')
 
-    #checkForConflicts = findUniqueReadyCheck(checks, interaction)
-    #botLog.debug(checkForConflicts)
+    checkForConflicts = findUniqueReadyCheck(checks, interaction)
+    if checkForConflicts:
+        botLog.info("Conflicting ReadyCheck found, DMing user")
+        msg = await interaction.followup.send("Can't create ready check!", wait=True)
+        await msg.delete()
+        await interaction.user.send("Only one ReadyCheck can be active per user per channel.  Use /cancel to remove the existing ReadyCheck if desired.")
+        return
+    else:
+        botLog.debug("No conflicting ReadyCheck found")
 
     await createReadyCheck(checks, interaction)
 
