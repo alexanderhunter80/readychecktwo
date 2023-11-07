@@ -38,17 +38,27 @@ bot = commands.Bot(command_prefix='/', intents=intents)
 # Event listeners.
 @bot.event
 async def on_raw_reaction_add(payload):
-    channel = bot.get_channel(payload.channel_id)
-    message = await channel.fetch_message(payload.message_id)
-    user = await bot.fetch_user(payload.user_id)
-    botLog.debug(f'Heard raw reaction add: %s, %s, %s', channel, message, user)
+    botLog.debug("enter")
+    botLog.debug(payload)
+
+    rc = getReadyCheckByMessageId(checks, payload.message_id)
+    checkExists = rc is not None
+    botLog.debug(f'RC found? {checkExists}')
+
+    if checkExists:
+        isReady = await isReadyCheckComplete(bot, payload, rc)
+
+    #if isReady:
+    #   completeReadyCheck()
+
+    botLog.debug("exit")
     return
 
 
 
 # Commands.
 @bot.tree.command(name="ready", description="Call a ready check")
-async def ready(interaction: discord.interactions.Interaction, target: int, mention: discord.Role = None, unique: bool = None):
+async def ready(interaction: discord.interactions.Interaction, target: int, mention: discord.Role = None, unique: bool = True):
     botLog.debug("enter")
     await interaction.response.defer()
     botLog.info(f'Ready check called by {interaction.user}, target {target}, mention {mention}, unique {unique}')

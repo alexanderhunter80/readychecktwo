@@ -22,7 +22,8 @@ class ReadyCheck(MutableMapping):
         self.mapping["authorLastKnownName"] = None
         self.mapping["guildLastKnownName"] = None
         self.mapping["channelLastKnownName"] = None
-        self.mapping["sentMessage"] = None
+        self.mapping["sentMessageID"] = None
+        self.mapping["fingerprint"] = None
         self.mapping["createdAt"] = datetime.utcnow()
         self.mapping["updatedAt"] = datetime.utcnow()
         self.update(data)
@@ -51,29 +52,25 @@ class ReadyCheck(MutableMapping):
         self.mapping["input"] = interaction.data
         self.mapping["target"] = findInOptions(interaction, "target")
         self.mapping["mention"] = findInOptions(interaction, "mention")
-        self.mapping["uniqueReactors"] = findInOptions(interaction, "uniqueReactors")
+        uniqueReactors = findInOptions(interaction, "unique")
+        self.mapping["uniqueReactors"] = uniqueReactors if uniqueReactors is not None else True
         self.mapping["author"] = interaction.user.id
         self.mapping["guild"] = interaction.guild_id
         self.mapping["channel"] = interaction.channel_id
         self.mapping["authorLastKnownName"] = interaction.user.name
         self.mapping["guildLastKnownName"] = interaction.guild.name
         self.mapping["channelLastKnownName"] = interaction.channel.name
+        self.mapping["fingerprint"] = self.generateFingerprint()
         self.mapping["updatedAt"] = datetime.utcnow()
         readyLog.info("Built "+glimpse(self))
         readyLog.debug("exit")
         return self
 
-    def generateKey(self):
+    def generateFingerprint(self):
         readyLog.debug("enter")
-        generatedKey = int(f'{self["author"]}{self["guild"]}{self["channel"]}')
-        readyLog.debug(f"exit {generatedKey}")
-        return generatedKey
-
-    def generateKeyFromInteraction(interaction):
-        readyLog.debug("enter")
-        generatedKey = int(f'{interaction.user.id}{interaction.guild_id}{interaction.channel_id}')
-        readyLog.debug(f"exit {generatedKey}")
-        return generatedKey
+        generatedFingerprint = int(f'{self["author"]}{self["guild"]}{self["channel"]}')
+        readyLog.debug(f"exit {generatedFingerprint}")
+        return generatedFingerprint
 
 def glimpse(rc):
     return f'ReadyCheck: {rc["authorLastKnownName"]} in {rc["guildLastKnownName"]} / {rc["channelLastKnownName"]} : target {rc["target"]}, {rc["mention"]}, {rc["uniqueReactors"]}'
@@ -86,4 +83,10 @@ def findInOptions(interaction, name):
             result = o['value']
             break
     readyLog.debug(f"exit {name} {result}")
-    return result    
+    return result
+
+def generateFingerprintFromInteraction(interaction):
+    readyLog.debug("enter")
+    generatedFingerprint = int(f'{interaction.user.id}{interaction.guild_id}{interaction.channel_id}')
+    readyLog.debug(f"exit {generatedFingerprint}")
+    return generatedFingerprint    

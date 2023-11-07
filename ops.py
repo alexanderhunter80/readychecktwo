@@ -9,7 +9,7 @@ opsLog = logging.getLogger("ops")
 # Imports.
 import os
 from dotenv import load_dotenv
-from classes.readycheck import ReadyCheck, glimpse, findInOptions
+from classes.readycheck import ReadyCheck, glimpse, findInOptions, generateFingerprintFromInteraction
 
 
 
@@ -18,19 +18,26 @@ def findUniqueReadyCheck(storage, interaction):
 	opsLog.debug('enter')
 
 	result = False
-	opsLog.debug(result)
 
-	possibleKey = ReadyCheck.generateKeyFromInteraction(interaction)
-	opsLog.debug(f'possible key {possibleKey}')
+	possibleFingerprint = generateFingerprintFromInteraction(interaction)
+	opsLog.debug(f'possible fingerprint {possibleFingerprint}')
 
-	if possibleKey in storage:
-		result = True
+	allChecks = storage.values()
+	for rc in allChecks:
+		if rc["fingerprint"] == possibleFingerprint:
+			result = True
+			break
 
 	opsLog.debug(f'exit {result}')
 	return result
 
-#def findReadyCheckByMessageId(storage, id):
-#	return collection.find_one({"message":id})
+def getReadyCheckByMessageId(storage, id):
+	opsLog.debug('enter')
+	result = None
+	if id in storage:
+		result = storage[id]
+	opsLog.debug(f'exit {glimpse(result) if result is not None else result}')
+	return result
 
 async def createReadyCheck(storage, interaction):
 	opsLog.debug("enter")
@@ -47,14 +54,57 @@ async def createReadyCheck(storage, interaction):
 	opsLog.debug(messageText)
 
 	sentMessage = await interaction.followup.send(messageText, wait=True)
-	rc["sentMessage"] = sentMessage
-	opsLog.debug(f"message id {rc['sentMessage'].id}")
+	rc["sentMessageID"] = sentMessage.id
+	opsLog.debug(f"message id {rc['sentMessageID']}")
 
-	storage[rc.generateKey()] = rc
-	opsLog.info(f'Inserted {rc.generateKey()} into checks')	
+	storage[rc["sentMessageID"]] = rc
+	opsLog.info(f'Inserted {glimpse(rc)} into checks')	
 
 	opsLog.debug("exit")
 	return
+
+async def isReadyCheckComplete(bot, payload, rc):
+	opsLog.debug("enter")
+	result = False
+
+	channel = await bot.fetch_channel(payload.channel_id)
+	message = await channel.fetch_message(payload.message_id)
+	opsLog.debug(f'Message retrieved: {message}')
+
+	if message is None:
+		return result
+
+	reactors = await countReactorsToMessage(message, rc["uniqueReactors"])
+	log.debug(f'Reactors: {reactors}')
+
+	# check against target
+
+	opsLog.debug("exit")
+	return	
+
+async def countReactorsToMessage(message, uniqueReactors):	
+	opsLog.debug(f"enter {uniqueReactors}")
+	result = 0
+
+	if uniqueReactors is True:
+		opsLog.debug("uniqueReactors is true, counting reactions per person")
+		reactors = set()
+		for r in message.reactions:
+			opsLog.debug(f'Reaction: {r.emoji}')
+			rlist = [user async for user in r.users()]
+			for user in rlist:
+				opsLog.debug(f'User: {user.name}')
+				reactors.add(user.id)
+			result = len(reactors)
+	elif uniqueReactors is False:
+		opsLog.debug("uniqueReactors is false, counting total reactions")
+		for r in message.reactions:
+			result += r.count
+	else:
+		raise TypeError("uniqueReactors was not a boolean")
+
+	opsLog.debug(f"exit {result}")
+	return result
 
 # async def removeReadyCheck(storage, bot, rc):
 #     try:
